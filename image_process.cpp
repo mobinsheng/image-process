@@ -723,7 +723,7 @@ cv::Mat ImageProcess::Binaryzation(const cv::Mat &origin) {
 	return newImage;
 }
 
-cv::Mat ImageProcess::Metal(cv::Mat& origin) {
+cv::Mat ImageProcess::PrewittEdge(const cv::Mat& origin) {
 	cv::Mat newImage;
 	origin.copyTo(newImage);
 
@@ -736,9 +736,102 @@ cv::Mat ImageProcess::Metal(cv::Mat& origin) {
 	int g_pos = 1;
 	int b_pos = 0;
 
-	if (origin.isContinuous()) {
-		cols *= rows;
-		rows = 1;
+	/* Sobel */
+	double Gx[9] = {
+		-1.0,0.0,1.0,
+		-1.0,0.0,1.0,
+		-1.0,0.0,1.0
+	};
+	double Gy[9] = {
+		1.0,1.0,1.0,
+		0.0,0.0,0.0,
+		-1.0,-1.0,-1.0
+	};
+
+	cv::Mat grayImage = GreyScale(origin);
+
+	float* sobel_norm = new float[rows * cols];
+	float max = 0.0;
+
+	for (int x = 0; x < rows - 2; x++)
+	{
+		for (int y = 0; y < cols - 2; y++)
+		{
+			double value_gx = 0.0;
+			double value_gy = 0.0;
+
+			for (int k = 0; k < 3; k++)
+			{
+				for (int p = 0; p < 3; p++)
+				{
+					cv::Vec3b grayColor = grayImage.at<cv::Vec3b>(x + 2 - k, y + 2 - p);
+					value_gx += Gx[p * 3 + k] * grayColor[0];
+					value_gy += Gy[p * 3 + k] * grayColor[0];
+				}
+	
+				sobel_norm[x * cols + y] = abs(value_gx) + abs(value_gy);
+				max = sobel_norm[x * cols + y] > max ? sobel_norm[x * cols + y] : max;
+			}
+		}
+	}
+
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			int val = 255 - int(255.0*sobel_norm[i * cols + j] / max);
+			newImage.at<cv::Vec3b>(i, j)[r_pos] = val;
+			newImage.at<cv::Vec3b>(i, j)[g_pos] = val;
+			newImage.at<cv::Vec3b>(i, j)[b_pos] = val;
+		}
+	}
+
+	return newImage;
+}
+
+cv::Mat ImageProcess::ContourExtraction(const cv::Mat &origin) {
+	cv::Mat newImage(origin.rows,origin.cols, CV_8UC3, cv::Scalar(255, 255, 255));
+	//origin.copyTo(newImage);
+
+	int channels = origin.channels();
+	int rows = origin.rows;
+	int cols = origin.cols;
+
+	// 三个颜色分量的位置（BGR，而不是RGB）
+	int r_pos = 2;
+	int g_pos = 1;
+	int b_pos = 0;
+
+	int pixel[8];   // 当前像素周围的8个像素的像素值
+	cv::Mat binImg = Binaryzation(origin);
+
+	for (int y = 1; y < rows -1; y++)
+	{
+		for (int x = 1; x < cols - 1; x++)
+		{
+			memset(pixel, 0, 8);
+
+			int r_val = binImg.at<cv::Vec3b>(x, y)[r_pos];
+			if (r_val == 0)
+			{
+				newImage.at<cv::Vec3b>(x, y)[r_pos] = 0;
+				newImage.at<cv::Vec3b>(x, y)[g_pos] = 0;
+				newImage.at<cv::Vec3b>(x, y)[b_pos] = 0;
+
+				pixel[0] = binImg.at<cv::Vec3b>(x - 1, y - 1)[r_pos];
+				pixel[1] = binImg.at<cv::Vec3b>(x - 1, y)[r_pos];
+				pixel[2] = binImg.at<cv::Vec3b>(x - 1, y + 1)[r_pos];
+				pixel[3] = binImg.at<cv::Vec3b>(x, y - 1)[r_pos];
+				pixel[4] = binImg.at<cv::Vec3b>(x, y + 1)[r_pos];
+				pixel[5] = binImg.at<cv::Vec3b>(x + 1, y - 1)[r_pos];
+				pixel[6] = binImg.at<cv::Vec3b>(x + 1, y)[r_pos];
+				pixel[7] = binImg.at<cv::Vec3b>(x + 1, y + 1)[r_pos];
+				if (pixel[0] + pixel[1] + pixel[2] + pixel[3] + pixel[4] + pixel[5] + pixel[6] + pixel[7] == 0) {
+					newImage.at<cv::Vec3b>(x, y) = cv::Vec3b(255, 255, 255);
+					newImage.at<cv::Vec3b>(x, y)[r_pos] = 255;
+					newImage.at<cv::Vec3b>(x, y)[g_pos] = 255;
+					newImage.at<cv::Vec3b>(x, y)[b_pos] = 255;
+				}	
+			}
+		}
 	}
 
 	return newImage;

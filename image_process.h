@@ -226,7 +226,9 @@ public:
 	static cv::Mat Binaryzation(const cv::Mat &origin);
 
 	static cv::Mat Metal(cv::Mat& origin);
+
 	static cv::Mat PrewittEdge(const cv::Mat &origin);
+
 	static cv::Mat ContourExtraction(const cv::Mat &origin);
 	static cv::Mat ConnectedDomain(const cv::Mat &origin);
 	static cv::Mat Dilate(const cv::Mat &origin);
