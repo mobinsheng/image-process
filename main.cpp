@@ -23,7 +23,7 @@
 int main()
 {
     cv::Mat img = ImageProcess::read_image(ROOT lena_name);//lena_name logo_name
-    cv::Mat dst = ImageProcess::Rotate(img,60);
+    cv::Mat dst = ImageProcess::HistogramEqualization(img);
     //cv::Mat dst2 = ImageProcess::Expansion(img);
 	ImageProcess::show_image(src_win_name, img);
 	ImageProcess::show_image(dst_win_name, dst);

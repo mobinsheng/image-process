@@ -1141,7 +1141,7 @@ double angle_to_radian(double degree, double min = 0, double second = 0)
 	return result; 
 }
 
-// todo
+// todo,还有问题
 cv::Mat ImageProcess::Rotate(const cv::Mat &origin, double angle) {
 	
 	int channels = origin.channels();
@@ -1199,4 +1199,87 @@ cv::Mat ImageProcess::Rotate(const cv::Mat &origin, double angle) {
 	}
 	return newImage;
 
+}
+
+void ImageProcess::Histogram(const cv::Mat &origin, double histogram[3][256]) {
+	int gray[3][256] = { 0 };
+
+	int rows = origin.rows;
+	int cols = origin.cols;
+
+	if (origin.isContinuous()) {
+		cols *= rows;
+		rows = 1;
+	}
+
+	for (int i = 0; i < rows; ++i)
+	{
+		const cv::Vec3b* origin_ptr = origin.ptr<cv::Vec3b>(i);
+
+		for (int j = 0; j < cols; ++j)
+		{
+			gray[0][origin_ptr[j][0]]++;
+			gray[1][origin_ptr[j][1]]++;
+			gray[2][origin_ptr[j][2]]++;
+		}
+	}
+	
+	for (int i = 0; i < 256; ++i) {
+		histogram[0][i] = gray[0][i] / (rows * cols * 1.0);
+		histogram[1][i] = gray[1][i] / (rows * cols * 1.0);
+		histogram[2][i] = gray[2][i] / (rows * cols * 1.0);
+	}
+}
+
+cv::Mat ImageProcess::HistogramEqualization(const cv::Mat &origin) {
+	cv::Mat newImage(origin.rows, origin.cols, CV_8UC3, cv::Scalar(0, 0, 0));
+
+	int r_pos = 2;
+	int g_pos = 1;
+	int b_pos = 0;
+
+	double histogram[3][256];
+	Histogram(origin, histogram);
+
+	double newGray[3][256] = { 0 };
+	double temp[3][256] = { 0 };
+	for (int i = 0; i < 256; ++i) {
+		if (i == 0) {
+			temp[r_pos][i] = histogram[r_pos][i];
+			temp[g_pos][i] = histogram[g_pos][i];
+			temp[b_pos][i] = histogram[b_pos][i];
+		}
+		else {
+			temp[r_pos][i] = temp[r_pos][i - 1] + histogram[r_pos][i];
+			temp[g_pos][i] = temp[g_pos][i - 1] + histogram[g_pos][i];
+			temp[b_pos][i] = temp[b_pos][i - 1] + histogram[b_pos][i];
+		}
+		newGray[r_pos][i] = (255.0 * temp[r_pos][i] + 0.5);
+		newGray[g_pos][i] = (255.0 * temp[g_pos][i] + 0.5);
+		newGray[b_pos][i] = (255.0 * temp[b_pos][i] + 0.5);
+	}
+
+	int rows = origin.rows;
+	int cols = origin.cols;
+
+	
+
+	if (origin.isContinuous()) {
+		cols *= rows;
+		rows = 1;
+	}
+
+	for (int i = 0; i < rows; ++i)
+	{
+		const cv::Vec3b* src_ptr = origin.ptr<cv::Vec3b>(i);
+		cv::Vec3b* dst_ptr = newImage.ptr<cv::Vec3b>(i);
+
+		for (int j = 0; j < cols; ++j)
+		{
+			dst_ptr[j][r_pos] = newGray[r_pos][src_ptr[j][r_pos]];
+			dst_ptr[j][g_pos] = newGray[g_pos][src_ptr[j][g_pos]];
+			dst_ptr[j][b_pos] = newGray[b_pos][src_ptr[j][b_pos]];
+		}
+	}
+	return newImage;
 }

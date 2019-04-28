@@ -248,6 +248,8 @@ public:
 	static cv::Mat Mirror(const cv::Mat &origin,bool horizontal = true,bool vertical = true);
 	static cv::Mat Zoom(const cv::Mat &origin, double x_scale = 1.0, double y_scale = 1.0);
 	static cv::Mat Rotate(const cv::Mat &origin, double angle = 0.0);
+	static void Histogram(const cv::Mat &origin, double histogram[4][256]);
+	static cv::Mat HistogramEqualization(const cv::Mat &origin);
 private:
 	static uchar SafeValue(int value);
 	static int Gray(const cv::Vec3b& oldColor);
