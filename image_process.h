@@ -14,6 +14,7 @@
 #include <numeric>
 #include <functional>
 
+
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -176,27 +177,27 @@ private:
 class ImageProcess
 {
 public:
-	// 读取图像
+	// 露脕脠隆脥录脧帽
 	static cv::Mat read_image(const std::string& name);
-	// 显示图像
+	// 脧脭脢戮脥录脧帽
 	static void show_image(const std::string& name, cv::Mat& pic);
-	// 把图像写入文件中
+	// 掳脩脥录脧帽脨麓脠毛脦脛录镁脰脨
 	static void write_image(const std::string& name, const cv::Mat& img);
 
-	// 灰度灰度变换
+	// 禄脪露脠禄脪露脠卤盲禄禄
 	static cv::Mat GreyScale(const cv::Mat& origin);
-	// 转成暖色调
+	// 脳陋鲁脡脜炉脡芦碌梅
 	static cv::Mat Warm(int delta, const cv::Mat& origin);
-	// 转成冷色调
+	// 脳陋鲁脡脌盲脡芦碌梅
 	static cv::Mat Cool(int delta, const cv::Mat& origin);
 
-	// 亮度调整
+	// 脕脕露脠碌梅脮没
 	static cv::Mat Brightness(int delta, const cv::Mat& origin);
-	// 水平翻转
+	// 脣庐脝陆路颅脳陋
 	static cv::Mat Horizontal(const cv::Mat& origin);
-	// 垂直翻转
+	// 麓鹿脰卤路颅脳陋
 	static cv::Mat Vertical(const cv::Mat& origin);
-	// 线性灰度变换 y = ax + b
+	// 脧脽脨脭禄脪露脠卤盲禄禄 y = ax + b
 	static cv::Mat LinearLevelTransformation( const cv::Mat& origin, double a, double b);
 	static cv::Mat LogGreyLevelTransformation( const cv::Mat& origin, double a, double b);
 	static cv::Mat PowerGreyLevelTransformation( const cv::Mat& origin, double c, double r, double b);
@@ -208,19 +209,20 @@ public:
 		double k1, double k2, double k3,
 		double b1, double b2, double b3);
 
-	// 简单的平滑
+	// 录貌碌楼碌脛脝陆禄卢
 	static cv::Mat SimpleSmooth(const cv::Mat &origin);
 
-	// 中值滤波
+	// 脰脨脰碌脗脣虏篓
 	static cv::Mat MeidaFilter(const cv::Mat &origin);
 
-	// Laplace锐化
+	// Laplace脠帽禄炉
 	static cv::Mat LaplaceSharpen(const cv::Mat &origin);
 
-	// Sobel边缘检测
+	// Sobel卤脽脭碌录矛虏芒
 	static cv::Mat SobelEdge(const cv::Mat &origin);
 
-	// 高斯滤波
+
+	// 赂脽脣鹿脗脣虏篓
 	static cv::Mat GaussianSmoothing(const cv::Mat &origin, int radius, double sigma);
 
 	static cv::Mat Binaryzation(const cv::Mat &origin);
@@ -245,12 +247,12 @@ private:
 	static uchar SafeValue(int value);
 	static int Gray(const cv::Vec3b& oldColor);
 	/*
-	** 卷积运算
-	** origin：原始图像
-	** newImage：目标图像
-	** kernel：卷积核（正方形，二维数组）
-	** kernelSize：卷积核的变长（奇数）
-	** kernelSum：卷积核内所有元素之和
+	** 戮铆禄媒脭脣脣茫
+	** origin拢潞脭颅脢录脥录脧帽
+	** newImage拢潞脛驴卤锚脥录脧帽
+	** kernel拢潞戮铆禄媒潞脣拢篓脮媒路陆脨脦拢卢露镁脦卢脢媒脳茅拢漏
+	** kernelSize拢潞戮铆禄媒潞脣碌脛卤盲鲁陇拢篓脝忙脢媒拢漏
+	** kernelSum拢潞戮铆禄媒潞脣脛脷脣霉脫脨脭陋脣脴脰庐潞脥
 	*/
 	static void KernalCalc(const cv::Mat &origin, 
 		cv::Mat & newImage, 
