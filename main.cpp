@@ -6,7 +6,7 @@
 
 #include "image_process.h"
 
-#define ROOT "/Users/mobinsheng/Downloads/image-process/"
+#define ROOT //"/Users/mobinsheng/Downloads/image-process/"
 
 #define lena_name "img/Lena.jpg"
 #define Airplane_name "img/Airplane.jpg"
@@ -23,7 +23,7 @@
 int main()
 {
     cv::Mat img = ImageProcess::read_image(ROOT lena_name);//lena_name logo_name
-    cv::Mat dst = ImageProcess::Thinning(img);
+    cv::Mat dst = ImageProcess::Rotate(img,60);
     //cv::Mat dst2 = ImageProcess::Expansion(img);
 	ImageProcess::show_image(src_win_name, img);
 	ImageProcess::show_image(dst_win_name, dst);

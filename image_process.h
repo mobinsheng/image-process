@@ -242,7 +242,12 @@ public:
 	static cv::Mat RGB2HSL(const cv::Mat &origin);
 	static cv::Mat RGB2CMYK(const cv::Mat &origin);
 	static cv::Mat Final(const cv::Mat &origin);
-
+public:
+	// 平移
+	static cv::Mat Translation(const cv::Mat &origin, int x, int y);
+	static cv::Mat Mirror(const cv::Mat &origin,bool horizontal = true,bool vertical = true);
+	static cv::Mat Zoom(const cv::Mat &origin, double x_scale = 1.0, double y_scale = 1.0);
+	static cv::Mat Rotate(const cv::Mat &origin, double angle = 0.0);
 private:
 	static uchar SafeValue(int value);
 	static int Gray(const cv::Vec3b& oldColor);

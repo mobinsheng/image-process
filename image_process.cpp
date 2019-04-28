@@ -1042,3 +1042,161 @@ cv::Mat ImageProcess::Thinning(const cv::Mat &origin){
     return binImg;
     
 }
+
+//---------------------------------------
+cv::Mat ImageProcess::Translation(const cv::Mat &origin, int x, int y) {
+	cv::Mat newImage(origin.rows, origin.cols, CV_8UC3, cv::Scalar(0, 0, 0));
+	int channels = origin.channels();
+	int rows = origin.rows;
+	int cols = origin.cols;
+
+	int r_pos = 2;
+	int g_pos = 1;
+	int b_pos = 0;
+
+	for (int i = 0; i < rows; ++i) {
+		for (int j = 0; j < cols; ++j) {
+			cv::Vec3b oldColor = origin.at<cv::Vec3b>(i,j);
+			int dst_i = i + x;
+			int dst_j = j + y;
+			if (dst_i >= rows || dst_j >= cols) {
+				continue;
+			}
+			newImage.at<cv::Vec3b>(dst_i, dst_j) = oldColor;
+		}
+	}
+	return newImage;
+}
+
+cv::Mat ImageProcess::Mirror(const cv::Mat &origin, bool horizontal, bool vertical) {
+	cv::Mat newImage(origin.rows, origin.cols, CV_8UC3, cv::Scalar(0, 0, 0));
+	int channels = origin.channels();
+	int rows = origin.rows;
+	int cols = origin.cols;
+
+	int r_pos = 2;
+	int g_pos = 1;
+	int b_pos = 0;
+
+	for (int i = 0; i < rows; ++i) {
+		for (int j = 0; j < cols; ++j) {
+			cv::Vec3b oldColor = origin.at<cv::Vec3b>(i, j);
+			
+			int dst_i = i;
+			int dst_j = j;
+
+			if (vertical) {
+				dst_i = rows - i - 1;
+			}
+			if (horizontal) {
+				dst_j = cols - j - 1;
+			}
+			newImage.at<cv::Vec3b>(dst_i, dst_j) = oldColor;
+		}
+	}
+	return newImage;
+}
+
+cv::Mat ImageProcess::Zoom(const cv::Mat &origin, double x_scale ,double y_scale ) {
+
+	int newRows = origin.rows * x_scale + 0.5;
+	int newCols = origin.cols * y_scale + 0.5;
+
+	cv::Mat newImage(newRows, newCols, CV_8UC3, cv::Scalar(0, 0, 0));
+	int channels = origin.channels();
+	int rows = origin.rows;
+	int cols = origin.cols;
+
+	int r_pos = 2;
+	int g_pos = 1;
+	int b_pos = 0;
+
+	for (int i = 0; i < newRows; ++i) {
+		for (int j = 0; j < newCols; ++j) {
+			int origin_i = i / x_scale + 0.5;
+			int origin_j = j / y_scale + 0.5;
+
+			if (origin_i >= 0 && origin_i < rows && origin_j >= 0 && origin_j < cols) {
+				cv::Vec3b oldColor = origin.at<cv::Vec3b>(origin_i, origin_j);
+				newImage.at<cv::Vec3b>(i, j) = oldColor;
+			}
+			else {
+				newImage.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
+			}
+		}
+	}
+
+	return newImage;
+}
+
+double angle_to_radian(double degree, double min = 0, double second = 0)
+{
+	double flag = (degree < 0) ? -1.0 : 1.0;          //判断正负  
+	if (degree < 0)
+	{
+		degree = degree * (-1.0);
+	}
+	double angle = degree + min / 60 + second / 3600;
+	double result = flag * (angle * M_PI) / 180;
+	return result; 
+}
+
+// todo
+cv::Mat ImageProcess::Rotate(const cv::Mat &origin, double angle) {
+	
+	int channels = origin.channels();
+	int rows = origin.rows;
+	int cols = origin.cols;
+
+	int r_pos = 2;
+	int g_pos = 1;
+	int b_pos = 0;
+
+	double srcx1, srcy1, srcx2, srcy2, srcx3, srcy3, srcx4, srcy4;
+	double dstx1, dsty1, dstx2, dsty2, dstx3, dsty3, dstx4, dsty4;
+
+	angle = angle_to_radian(angle);
+
+	double cosa = (double)cos((double)angle);
+	double sina = (double)sin((double)angle);
+
+	srcx1 = -0.5 * cols;
+	srcy1 = 0.5 * rows;
+	srcx2 = 0.5 * cols;
+	srcy2 = 0.5 * rows;
+	srcx3 = -0.5 * cols;
+	srcy3 = -0.5 * rows;
+	srcx4 = 0.5 * cols;
+	srcy4 = -0.5 * rows;
+
+	dstx1 = cosa * srcx1 + sina * srcy1;
+	dsty1 = -sina * srcx1 + cosa * srcy1;
+	dstx2 = cosa * srcx2 + sina * srcy2;
+	dsty2 = -sina * srcx2 + cosa * srcy2;
+	dstx3 = cosa * srcx3 + sina * srcy3;
+	dsty3 = -sina * srcx3 + cosa * srcy3;
+	dstx4 = cosa * srcx4 + sina * srcy4;
+	dsty4 = -sina * srcx4 + cosa * srcy4;
+
+	int newRows = std::max<double>(fabs(dsty4 - dsty1), fabs(dsty3 - dsty2)) + 0.5;
+	int newCols = std::max<double>(fabs(dstx4 - dstx1), fabs(dstx3 - dstx2)) + 0.5;
+
+	double num1 = -0.5 * newCols* cosa - 0.5 * newRows * sina + 0.5 * cols;
+	double num2 = -0.5 * newCols* sina - 0.5 * newRows * cosa + 0.5 * rows;
+
+	cv::Mat newImage(newRows, newCols, CV_8UC3, cv::Scalar(0, 0, 0));
+
+	for (int i = 0; i < newRows; ++i) {
+		for (int j = 0; j < newCols; ++j) {
+			int org_i = i * cosa + j * sina + num1;
+			int org_j = -1.0 * i * sina + j * cosa + num2;
+
+			if (org_i >= 0 && org_i < rows && org_j >= 0 && org_j < cols) {
+				cv::Vec3b oldColor = origin.at<cv::Vec3b>(org_i, org_j);
+				newImage.at<cv::Vec3b>(i, j) = oldColor;
+			}
+		}
+	}
+	return newImage;
+
+}
