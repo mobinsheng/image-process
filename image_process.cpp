@@ -1243,6 +1243,17 @@ cv::Mat ImageProcess::HistogramEqualization(const cv::Mat &origin) {
 
 	double newGray[3][256] = { 0 };
 	double temp[3][256] = { 0 };
+	CumulativeHistogram(histogram, newGray);
+
+	LUT(origin, newImage, newGray);
+	return newImage;
+}
+
+void ImageProcess::CumulativeHistogram(const double histogram[3][256], double gray[3][256]) {
+	int r_pos = 2;
+	int g_pos = 1;
+	int b_pos = 0;
+	double temp[3][256] = { 0 };
 	for (int i = 0; i < 256; ++i) {
 		if (i == 0) {
 			temp[r_pos][i] = histogram[r_pos][i];
@@ -1254,15 +1265,18 @@ cv::Mat ImageProcess::HistogramEqualization(const cv::Mat &origin) {
 			temp[g_pos][i] = temp[g_pos][i - 1] + histogram[g_pos][i];
 			temp[b_pos][i] = temp[b_pos][i - 1] + histogram[b_pos][i];
 		}
-		newGray[r_pos][i] = (255.0 * temp[r_pos][i] + 0.5);
-		newGray[g_pos][i] = (255.0 * temp[g_pos][i] + 0.5);
-		newGray[b_pos][i] = (255.0 * temp[b_pos][i] + 0.5);
+		gray[r_pos][i] = (255.0 * temp[r_pos][i] + 0.5);
+		gray[g_pos][i] = (255.0 * temp[g_pos][i] + 0.5);
+		gray[b_pos][i] = (255.0 * temp[b_pos][i] + 0.5);
 	}
+}
 
+void ImageProcess::LUT(const cv::Mat &origin, cv::Mat& dst, const double lut[3][256]) {
+	int r_pos = 2;
+	int g_pos = 1;
+	int b_pos = 0;
 	int rows = origin.rows;
 	int cols = origin.cols;
-
-	
 
 	if (origin.isContinuous()) {
 		cols *= rows;
@@ -1272,14 +1286,136 @@ cv::Mat ImageProcess::HistogramEqualization(const cv::Mat &origin) {
 	for (int i = 0; i < rows; ++i)
 	{
 		const cv::Vec3b* src_ptr = origin.ptr<cv::Vec3b>(i);
-		cv::Vec3b* dst_ptr = newImage.ptr<cv::Vec3b>(i);
+		cv::Vec3b* dst_ptr = dst.ptr<cv::Vec3b>(i);
 
 		for (int j = 0; j < cols; ++j)
 		{
-			dst_ptr[j][r_pos] = newGray[r_pos][src_ptr[j][r_pos]];
-			dst_ptr[j][g_pos] = newGray[g_pos][src_ptr[j][g_pos]];
-			dst_ptr[j][b_pos] = newGray[b_pos][src_ptr[j][b_pos]];
+			dst_ptr[j][r_pos] = lut[r_pos][src_ptr[j][r_pos]];
+			dst_ptr[j][g_pos] = lut[g_pos][src_ptr[j][g_pos]];
+			dst_ptr[j][b_pos] = lut[b_pos][src_ptr[j][b_pos]];
 		}
 	}
+}
+
+cv::Mat ImageProcess::HistogramSpecify(const cv::Mat &origin, const cv::Mat& specify) {
+	cv::Mat newImage(origin.rows, origin.cols, CV_8UC3, cv::Scalar(0, 0, 0));
+
+	// 计算直方图
+	double originHist[3][256];
+	double specHist[3][256];
+	Histogram(origin, originHist);
+	Histogram(specify, specHist);
+
+	// 计算累计直方图
+	double originCumHist[3][256] = { 0 };
+	double specCumHist[3][256] = { 0 };
+	CumulativeHistogram(originHist, originCumHist);
+	CumulativeHistogram(specHist, specCumHist);
+
+	// 分配内存
+	double* cumHistDiff[3][256] = { 0 };
+	for (int i = 0; i < 256; ++i) {
+		cumHistDiff[0][i] = new double[256];
+		cumHistDiff[1][i] = new double[256];
+		cumHistDiff[2][i] = new double[256];
+	}
+
+	// 计算累计直方图的差值
+	for (int i = 0; i < 256; ++i) {
+		for (int j = 0; j < 256; ++j) {
+			cumHistDiff[0][i][j] = fabs(originCumHist[0][i] - specCumHist[0][j]);
+			cumHistDiff[1][i][j] = fabs(originCumHist[1][i] - specCumHist[1][j]);
+			cumHistDiff[2][i][j] = fabs(originCumHist[2][i] - specCumHist[2][j]);
+		}
+	}
+
+	// 构建灰度级映射表
+	double lut[3][256];
+	for (int i = 0; i < 256; ++i) {
+		double min0 = cumHistDiff[0][i][0];
+		double min1 = cumHistDiff[1][i][0];
+		double min2 = cumHistDiff[2][i][0];
+		int index0 = 0;
+		int index1 = 0;
+		int index2 = 0;
+		for (int j = 1; j < 256; ++j) {
+			if (cumHistDiff[0][i][j] < min0) {
+				min0 = cumHistDiff[0][i][j];
+				index0 = j;
+			}
+			if (cumHistDiff[1][i][j] < min1) {
+				min1 = cumHistDiff[1][i][j];
+				index1 = j;
+			}
+			if (cumHistDiff[2][i][j] < min2) {
+				min2 = cumHistDiff[2][i][j];
+				index2 = j;
+			}
+		}
+		lut[0][i] = index0;
+		lut[1][i] = index1;
+		lut[2][i] = index2;
+	}
+
+	// 删除临时内存
+	for (int i = 0; i < 256; ++i) {
+		delete[] cumHistDiff[0][i];
+		delete[]cumHistDiff[1][i];
+		delete[]cumHistDiff[2][i];
+	}
+
+	// 根据根据映射表做直方图规定化
+	LUT(origin, newImage, lut);
+	return newImage;
+}
+
+cv::Mat ImageProcess::NoiseEliminate(const cv::Mat &origin) {
+	cv::Mat newImage;
+	origin.copyTo(newImage);
+
+	int channels = origin.channels();
+	int rows = origin.rows;
+	int cols = origin.cols;
+	int r_pos = 2;
+	int g_pos = 1;
+	int b_pos = 0;
+
+	for (int i = 1; i < rows - 1; ++i) {
+		for (int j = 1; j < cols - 1; ++j) {
+			for (int channel = 0; channel < 3; ++channel) {
+				int avg = 0;
+				avg += origin.at<cv::Vec3b>(i - 1, j - 1)[channel];
+				avg += origin.at<cv::Vec3b>(i - 1, j)[channel];
+				avg += origin.at<cv::Vec3b>(i - 1, j + 1)[channel];
+
+				avg += origin.at<cv::Vec3b>(i, j - 1)[channel];
+				avg += origin.at<cv::Vec3b>(i, j + 1)[channel];
+
+				avg += origin.at<cv::Vec3b>(i + 1, j - 1)[channel];
+				avg += origin.at<cv::Vec3b>(i + 1, j)[channel];
+				avg += origin.at<cv::Vec3b>(i + 1, j + 1)[channel];
+
+				avg /= 8;
+
+				if (fabs(origin.at<cv::Vec3b>(i, j)[channel] - avg) > 127.5) {
+					newImage.at<cv::Vec3b>(i, j)[channel] = avg;
+				}
+			}
+			
+		}
+	}
+	return newImage;
+}
+
+cv::Mat ImageProcess::IsolatedPointsEliminate(const cv::Mat &origin) {
+	cv::Mat newImage;
+	origin.copyTo(newImage);
+
+	int channels = origin.channels();
+	int rows = origin.rows;
+	int cols = origin.cols;
+	int r_pos = 2;
+	int g_pos = 1;
+	int b_pos = 0;
 	return newImage;
 }

@@ -245,11 +245,29 @@ public:
 public:
 	// 平移
 	static cv::Mat Translation(const cv::Mat &origin, int x, int y);
+	// 镜像
 	static cv::Mat Mirror(const cv::Mat &origin,bool horizontal = true,bool vertical = true);
+	// 缩放
 	static cv::Mat Zoom(const cv::Mat &origin, double x_scale = 1.0, double y_scale = 1.0);
+	// 旋转：todo
 	static cv::Mat Rotate(const cv::Mat &origin, double angle = 0.0);
-	static void Histogram(const cv::Mat &origin, double histogram[4][256]);
+	// 计算直方图
+	static void Histogram(const cv::Mat &origin, double histogram[3][256]);
+	// 直方图均衡化
 	static cv::Mat HistogramEqualization(const cv::Mat &origin);
+	// 计算累计直方图
+	static void CumulativeHistogram(const double histogram[3][256],double gray[3][256]);
+	// 查找表
+	static void LUT(const cv::Mat &src, cv::Mat& dst, const double lut[3][256]);
+	// 直方图规定化
+	static cv::Mat HistogramSpecify(const cv::Mat &origin, const cv::Mat& specify);
+
+	// 平滑处理：噪声消除
+	static cv::Mat NoiseEliminate(const cv::Mat &origin);
+
+	// 平滑处理：消除孤立点
+	static cv::Mat IsolatedPointsEliminate(const cv::Mat &origin);
+	
 private:
 	static uchar SafeValue(int value);
 	static int Gray(const cv::Vec3b& oldColor);
