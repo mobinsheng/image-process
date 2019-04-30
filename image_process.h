@@ -250,6 +250,11 @@ public:
 	static cv::Mat Rotate(const cv::Mat &origin, double angle = 0.0);
 	static void Histogram(const cv::Mat &origin, double histogram[4][256]);
 	static cv::Mat HistogramEqualization(const cv::Mat &origin);
+    
+public:
+    //cv part
+    static cv::Mat Add(const cv::Mat &img1,double weight1,const cv::Mat &img2,double weight2);
+    static cv::Mat Cut(const cv::Mat &origin,int width,int height,bool center = true);
 private:
 	static uchar SafeValue(int value);
 	static int Gray(const cv::Vec3b& oldColor);

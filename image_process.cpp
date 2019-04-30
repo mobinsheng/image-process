@@ -1283,3 +1283,86 @@ cv::Mat ImageProcess::HistogramEqualization(const cv::Mat &origin) {
 	}
 	return newImage;
 }
+
+cv::Mat ImageProcess::Add(const cv::Mat &img1,double weight1,const cv::Mat &img2,double weight2){
+    int newRows = std::max(img1.rows,img2.rows);
+    int newCols = std::max(img1.cols,img2.cols);
+    
+    cv::Mat newImage(newRows, newCols, CV_8UC3, cv::Scalar(0, 0, 0));
+    
+    for(int i = 0; i < newRows; ++i){
+        for(int j = 0; j < newCols; ++j){
+            cv::Vec3b color;
+            
+            int i1 = i - (newRows - img1.rows) / 2;
+            int j1 = j - (newCols - img1.cols) / 2;
+            
+            int i2 = i - (newRows - img2.rows) / 2;
+            int j2 = j - (newCols - img2.cols) / 2;
+            
+            bool valid1 = false;
+            bool valid2 = false;
+            if(i1 >= 0 && j1 >= 0 && i1 < img1.rows && j1 < img1.cols){
+                valid1 = true;
+            }
+            if(i2 >= 0 && j2 >= 0 && i2 < img2.rows && j2 < img2.cols){
+                valid2 = true;
+            }
+            
+            if(!valid1  && !valid2){
+                continue;
+            }
+            
+            if(valid1 && valid2){
+                cv::Vec3b color1 = img1.at<cv::Vec3b>(i1,j1);
+                cv::Vec3b color2 = img2.at<cv::Vec3b>(i2,j2);
+                color = weight1 * color1 + weight2 * color2;
+            }
+            else {
+                if(valid1){
+                    cv::Vec3b color1 = img1.at<cv::Vec3b>(i1,j1);
+                    color = color1;
+                }
+                else{
+                    cv::Vec3b color2 = img2.at<cv::Vec3b>(i2,j2);
+                    color = color2;
+                }
+            }
+            
+            newImage.at<cv::Vec3b>(i,j) = color;
+        }
+    }
+    
+    return newImage;
+}
+
+cv::Mat ImageProcess::Cut(const cv::Mat &origin,int width,int height,bool center ){
+    assert(width <= origin.cols);
+    assert(height <= origin.rows);
+    
+    int newRows = height;
+    int newCols = width;
+    
+    cv::Mat newImage(newRows, newCols, CV_8UC3, cv::Scalar(0, 0, 0));
+    
+    int orgin_i = 0;
+    int orgin_j = 0;
+    if(center){
+        orgin_i = (origin.rows - newRows) / 2;
+        orgin_j = (origin.cols - newCols) / 2;
+    }
+    
+    for(int i = 0; i < newRows; ++i){
+        for(int j = 0; j < newCols; ++j){
+            int orgin_i = i;
+            int orgin_j = j;
+            if(center){
+                orgin_i = i + (origin.rows - newRows) / 2;
+                orgin_j = j + (origin.cols - newCols) / 2;
+            }
+            uchar* new_ptr = newImage.ptr();
+            newImage.at<cv::Vec3b>(i,j) = origin.at<cv::Vec3b>(orgin_i,orgin_j);
+        }
+    }
+    return newImage;
+}
